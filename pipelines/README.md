@@ -32,7 +32,7 @@ backend-server-image-test:
     - exit
 ```
 
-## Cleanup
+## Cleanup Artifacts (unwanted docker/image/container/volume)
 
 ```yaml
 cleanup:
@@ -44,7 +44,7 @@ cleanup:
     - docker system prune -f
 ```
 
-## Image Delivery To Kubernetes (test deployment)
+## Image Delivery To Test Kubernetes (Non Master Branch)
 
 ```yaml
 backend-server-image-deliver-test-environment:
@@ -73,7 +73,7 @@ backend-server-image-deliver-test-environment:
     - master
 ```
 
-## Image Delivery To Kubernetes (production deployment)
+## Image Delivery To Production Kubernetes (Master Branch)
 
 ```yaml
 backend-server-image-deliver-test-environment:
