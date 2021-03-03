@@ -1,8 +1,50 @@
-# Collection of dockerfile
+# Collection of `dockerfile` / `docker-compose.yaml`
 
-## HTTP Server
+## Pipeline Worker For Continuous Deployment
 
-Using NPM http-server to serve webpages via HTTP.
+Using a combination of Terraform, Azure CLI, and Kubectl to provision Azure resources and deploy workloads to AKS.
+
+Credentials for Azure, or other SSH keys are passed in from host via volume mount.
+
+### Dockerfile
+
+```dockerfile
+FROM debian:stable-slim
+
+RUN apt-get update && apt-get install -y sudo curl gnupg gnupg2 software-properties-common apt-transport-https lsb-release ca-certificates apt-utils
+
+# install azure cli
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# install terraform
+RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
+RUN apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+RUN apt-get update && apt-get install -y terraform
+
+# install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+RUN install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+CMD ["/bin/bash"]
+```
+
+### Example docker-compose
+
+```yaml
+version: "3.7"
+services:
+  pipeline-worker:
+    container_name: pipeline-worker
+    image: <image-name>
+    volumes:
+      - "/root/.azure:/root/.azure"
+      - "/root/.docker:/root/.docker"
+      - "/root/.ssh:/root/.ssh"
+```
+
+## Simple NPM HTTP Server
+
+Using NPM http-server to serve static webpages.
 
 ```dockerfile
 FROM node:12.2.0
@@ -10,7 +52,7 @@ FROM node:12.2.0
 WORKDIR /app
 COPY /app/dist/app /app
 RUN npm install --global http-server
-CMD sed -i "s/172.31.38.103:8000/$BACKEND_API_ENDPOINT/g" /app/main.js && http-server --proxy http://localhost:4200? --port 4200
+CMD http-server --proxy http://localhost:4200? --port 4200
 ```
 
 ## Development Environment - Angular
@@ -64,9 +106,11 @@ RUN python3.6 -m pip install requests
 
 RUN apt-get install -y sshpass
 RUN mkdir /root/.ssh
-RUN echo "172.31.50.83 ecdsa-sha2-nistp256 <ssh-key>"  > /root/.ssh/known_hosts
 
-CMD ./start-remote-splunk-conf-extraction.sh
+# save fingerprint of target machine to prevent interactive terminal prompts
+RUN echo "<ip-address> ecdsa-sha2-nistp256 <ssh-key>"  > /root/.ssh/known_hosts
+
+CMD ./some-script.sh
 ```
 
 ## Python Scrapy
